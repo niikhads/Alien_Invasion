@@ -2,31 +2,24 @@ import pygame
 import sys
 import random
 
-# Pygame-in başlanğıcı
 pygame.init()
 
-# Ekran ölçüləri
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Alien Invasion")
 
-# Rənglər
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-# FPS
 clock = pygame.time.Clock()
 FPS = 60
 
-# Şrift
 font = pygame.font.SysFont(None, 36)
 
-# Mətn yaratma funksiyası
 def draw_text(text, x, y, color=WHITE):
     img = font.render(text, True, color)
     screen.blit(img, (x, y))
 
-# Kosmik gəmi class
 class Spaceship:
     def __init__(self):
         self.image = pygame.image.load("spaceship3.jpeg")
@@ -43,7 +36,6 @@ class Spaceship:
     def draw(self):
         screen.blit(self.image, self.rect)
 
-# Meteorlar class
 class Meteor:
     def __init__(self, speed):
         self.image = pygame.image.load("meteor.png")
@@ -57,22 +49,47 @@ class Meteor:
     def draw(self):
         screen.blit(self.image, self.rect)
 
-# Mərmilər class (Həm meteorlardan, həm də gəmidən atılan mərmilər üçün)
-class Bullet:
-    def __init__(self, x, y):
-        self.image = pygame.image.load("bullet.jpeg")  # bullet.png şəklini istifadə edirik
-        # Mərminin ölçüsünü kiçiltmək
-        self.image = pygame.transform.scale(self.image, (30, 30))  # Bu ölçüləri tənzimləyin
-        self.rect = self.image.get_rect(center=(x, y))
-        self.speed = 7
+class StrongMeteor:
+    def __init__(self, speed):
+        self.image = pygame.image.load("large_meteor.jpeg")  # Güclü meteoritin şəkli
+        self.image = pygame.transform.scale(self.image, (60, 60))  # Böyük ölçü
+        self.rect = self.image.get_rect(center=(random.randint(20, SCREEN_WIDTH - 20), -20))
+        self.speed = speed
+        self.hp = 3  # Güclü meteoritlər daha çox zərər qəbul edəcək
 
     def move(self):
-        self.rect.y -= self.speed  # Mərmi yuxarıya hərəkət edir
+        self.rect.y += self.speed
 
     def draw(self):
         screen.blit(self.image, self.rect)
 
-# Güc artırıcıları class
+class EnemySpaceship:
+    def __init__(self, speed):
+        self.image = pygame.image.load("spaceship_enemy.jpeg") 
+        self.image = pygame.transform.scale(self.image, (50, 50))
+        self.rect = self.image.get_rect(center=(random.randint(20, SCREEN_WIDTH - 20), -20))
+        self.speed = speed
+        self.hp = 2  # Düşmən kosmik gəmisinin 2 həyatı var
+
+    def move(self):
+        self.rect.y += self.speed
+
+    def draw(self):
+        screen.blit(self.image, self.rect)
+
+class Bullet:
+    def __init__(self, x, y):
+        self.image = pygame.image.load("bullet.jpeg")  
+        self.image = pygame.transform.scale(self.image, (30, 30))  
+        self.rect = self.image.get_rect(center=(x, y))
+        self.speed = 7
+
+    def move(self):
+        self.rect.y -= self.speed  
+
+    def draw(self):
+        screen.blit(self.image, self.rect)
+
 class PowerUp:
     def __init__(self, x, y, power_type):
         self.image = None
@@ -94,39 +111,50 @@ class PowerUp:
     def draw(self):
         screen.blit(self.image, self.rect)
 
-# Oyun parametrləri
 spaceship = Spaceship()
 meteors = []
+strong_meteors = []  
+enemy_spaceships = [] 
 bullets = []
-power_ups = []  # Güc artırıcıları üçün siyahı
+power_ups = []  
 score = 0
 lives = 3
 meteor_speed = 2
+last_special_enemy_time = pygame.time.get_ticks()  # Sonuncu xüsusi düşmənin vaxtı
+special_enemy_interval = 10000  # Hər 10 saniyədə bir xüsusi düşmən görünsün
 
-# Meteor əlavə etmə funksiyası
 def add_meteor():
     if random.randint(1, 20) == 1:
         meteor = Meteor(meteor_speed)
         meteors.append(meteor)
 
-# Güc artırıcıları əlavə etmək funksiyası
+def add_strong_meteor():
+    if random.randint(1, 100) == 1:  # 100-də bir ehtimalla güclü meteorit
+        meteor = StrongMeteor(meteor_speed + 2)  # Daha sürətli güclü meteoritlər
+        strong_meteors.append(meteor)
+
+def add_enemy_spaceship():
+    global last_special_enemy_time
+    if pygame.time.get_ticks() - last_special_enemy_time >= special_enemy_interval:
+        enemy = EnemySpaceship(4)  # Düşmən gəmisinin sürəti
+        enemy_spaceships.append(enemy)
+        last_special_enemy_time = pygame.time.get_ticks()  # Sonuncu düşmən zamanını yenilə
+
 def add_power_up():
-    if random.randint(1, 200) <= 5:  # Güc artırıcıların 200-də bir ehtimalla ekrana düşməsi
+    if random.randint(1, 1000) <= 5:  # Güc artırıcıların 1000-də bir ehtimalla ekrana düşməsi
         power_type = random.choice(["life", "speed", "ammo"])  # Həyat, sürət və ya ammo
         x = random.randint(20, SCREEN_WIDTH - 20)
         power_ups.append(PowerUp(x, -20, power_type))
 
-# Səviyyə seçimi
 levels = {"Easy": 2, "Normal": 4, "Difficult": 6}
 level_selected = False
 
-# Musiqi çalınması
-pygame.mixer.music.load("background_music.mp3")  # Musiqi faylını yükləyin
-pygame.mixer.music.play(-1)  # Sonsuz dövrədə musiqi çalsın
+pygame.mixer.music.load("background_music.mp3")  
+pygame.mixer.music.play(-1)  
 
 while not level_selected:
     screen.fill(BLACK)
-    draw_text("Səviyyəni seçin: Easy (E), Normal (N), Difficult (D)", SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 20)
+    draw_text("Seviyyeni seçin: Easy (E), Normal (N), Difficult (D)", SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 20)
     pygame.display.flip()
 
     for event in pygame.event.get():
@@ -144,28 +172,23 @@ while not level_selected:
                 meteor_speed = levels["Difficult"]
                 level_selected = True
 
-# Oyun döngüsü
 running = True
 while running:
     screen.fill(BLACK)
 
-    # Hadisələrin yoxlanması
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
-        # Gəmini atış etdirmək
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:  # Mərmi atmaq üçün Space düyməsi
                 bullet = Bullet(spaceship.rect.centerx, spaceship.rect.top)
                 bullets.append(bullet)
 
-    # Klaviatura ilə hərəkət
     keys = pygame.key.get_pressed()
     spaceship.move(keys)
 
-    # Meteorları əlavə et və hərəkət etdir
     add_meteor()
     for meteor in meteors[:]:
         meteor.move()
@@ -178,7 +201,28 @@ while running:
             meteors.remove(meteor)
             score += 1
 
-    # Güc artırıcıları əlavə et və hərəkət etdir
+    add_strong_meteor()
+    for strong_meteor in strong_meteors[:]:
+        strong_meteor.move()
+        if strong_meteor.rect.colliderect(spaceship.rect):
+            strong_meteors.remove(strong_meteor)
+            lives -= 1
+            if lives == 0:
+                running = False
+        elif strong_meteor.rect.top > SCREEN_HEIGHT:
+            strong_meteors.remove(strong_meteor)
+
+    add_enemy_spaceship()
+    for enemy_spaceship in enemy_spaceships[:]:
+        enemy_spaceship.move()
+        if enemy_spaceship.rect.colliderect(spaceship.rect):
+            enemy_spaceships.remove(enemy_spaceship)
+            lives -= 1
+            if lives == 0:
+                running = False
+        elif enemy_spaceship.rect.top > SCREEN_HEIGHT:
+            enemy_spaceships.remove(enemy_spaceship)
+
     add_power_up()
     for power_up in power_ups[:]:
         power_up.move()
@@ -194,7 +238,6 @@ while running:
         if power_up.rect.top > SCREEN_HEIGHT:  # Ekranı tərk edən güc artırıcıları
             power_ups.remove(power_up)
 
-    # Mərmilərdən və meteorlardan atəşləri yoxla
     for bullet in bullets[:]:
         bullet.move()
         for meteor in meteors[:]:
@@ -203,58 +246,38 @@ while running:
                 bullets.remove(bullet)
                 score += 1  # Hər vurulan meteor üçün xal
                 break
+        for strong_meteor in strong_meteors[:]:
+            if bullet.rect.colliderect(strong_meteor.rect):
+                strong_meteors.remove(strong_meteor)
+                bullets.remove(bullet)
+                score += 3  # Güclü meteorit vurduqda daha çox xal
+                break
+        for enemy_spaceship in enemy_spaceships[:]:
+            if bullet.rect.colliderect(enemy_spaceship.rect):
+                enemy_spaceships.remove(enemy_spaceship)
+                bullets.remove(bullet)
+                score += 5  # Düşmən gəmisini vurduqda daha çox xal
+                break
 
         if bullet.rect.bottom < 0:  # Ekranı tərk edən mərmilər
             bullets.remove(bullet)
 
-    # Gəmi və meteorların çəkilməsi
     spaceship.draw()
     for meteor in meteors:
         meteor.draw()
+    for strong_meteor in strong_meteors:
+        strong_meteor.draw()
+    for enemy_spaceship in enemy_spaceships:
+        enemy_spaceship.draw()
 
-    # Mərmilərin çəkilməsi
     for bullet in bullets:
         bullet.draw()
 
-    # Güc artırıcılarının çəkilməsi
     for power_up in power_ups:
         power_up.draw()
 
-    # Skor və həyatlar
     draw_text(f"Skor: {score}", 10, 10)
-    draw_text(f"Həyat: {lives}", 10, 50)
+    draw_text(f"Live: {lives}", 10, 50)
 
-    # Ekranı yeniləmə
     pygame.display.flip()
     clock.tick(FPS)
-
-# Oyun bitdikdə restart seçimi
-while True:
-    screen.fill(BLACK)
-    draw_text("Oyun Bitdi!", SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 - 40)
-    draw_text(f"Yekun Skor: {score}", SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2)
-    draw_text("Yenidən başlamaq üçün R basın", SCREEN_WIDTH // 2 - 180, SCREEN_HEIGHT // 2 + 40)
-    draw_text("Çıxmaq üçün Q basın", SCREEN_WIDTH // 2 - 140, SCREEN_HEIGHT // 2 + 80)
-    pygame.display.flip()
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_r:
-                spaceship = Spaceship()
-                meteors = []
-                bullets = []
-                power_ups = []
-                score = 0
-                lives = 3
-                running = True
-                pygame.mixer.music.play(-1)  # Musiqi təkrarlanır
-                break
-            elif event.key == pygame.K_q:
-                pygame.quit()
-                sys.exit()
-
-    if running:
-        break
