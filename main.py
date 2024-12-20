@@ -51,11 +51,11 @@ class Meteor:
 
 class StrongMeteor:
     def __init__(self, speed):
-        self.image = pygame.image.load("large_meteor.jpeg")  # Güclü meteoritin şəkli
-        self.image = pygame.transform.scale(self.image, (60, 60))  # Böyük ölçü
+        self.image = pygame.image.load("large_meteor.jpeg")
+        self.image = pygame.transform.scale(self.image, (60, 60))
         self.rect = self.image.get_rect(center=(random.randint(20, SCREEN_WIDTH - 20), -20))
         self.speed = speed
-        self.hp = 3  # Güclü meteoritlər daha çox zərər qəbul edəcək
+        self.hp = 3
 
     def move(self):
         self.rect.y += self.speed
@@ -65,11 +65,11 @@ class StrongMeteor:
 
 class EnemySpaceship:
     def __init__(self, speed):
-        self.image = pygame.image.load("spaceship_enemy.jpeg") 
+        self.image = pygame.image.load("spaceship_enemy.jpeg")
         self.image = pygame.transform.scale(self.image, (50, 50))
         self.rect = self.image.get_rect(center=(random.randint(20, SCREEN_WIDTH - 20), -20))
         self.speed = speed
-        self.hp = 2  # Düşmən kosmik gəmisinin 2 həyatı var
+        self.hp = 2
 
     def move(self):
         self.rect.y += self.speed
@@ -79,13 +79,13 @@ class EnemySpaceship:
 
 class Bullet:
     def __init__(self, x, y):
-        self.image = pygame.image.load("bullet.jpeg")  
-        self.image = pygame.transform.scale(self.image, (30, 30))  
+        self.image = pygame.image.load("bullet.jpeg")
+        self.image = pygame.transform.scale(self.image, (30, 30))
         self.rect = self.image.get_rect(center=(x, y))
         self.speed = 7
 
     def move(self):
-        self.rect.y -= self.speed  
+        self.rect.y -= self.speed
 
     def draw(self):
         screen.blit(self.image, self.rect)
@@ -120,8 +120,8 @@ power_ups = []
 score = 0
 lives = 3
 meteor_speed = 2
-last_special_enemy_time = pygame.time.get_ticks()  # Sonuncu xüsusi düşmənin vaxtı
-special_enemy_interval = 10000  # Hər 10 saniyədə bir xüsusi düşmən görünsün
+last_special_enemy_time = pygame.time.get_ticks()  
+special_enemy_interval = 10000  
 
 def add_meteor():
     if random.randint(1, 20) == 1:
@@ -129,20 +129,20 @@ def add_meteor():
         meteors.append(meteor)
 
 def add_strong_meteor():
-    if random.randint(1, 100) == 1:  # 100-də bir ehtimalla güclü meteorit
-        meteor = StrongMeteor(meteor_speed + 2)  # Daha sürətli güclü meteoritlər
+    if random.randint(1, 100) == 1:  
+        meteor = StrongMeteor(meteor_speed + 2)  
         strong_meteors.append(meteor)
 
 def add_enemy_spaceship():
     global last_special_enemy_time
     if pygame.time.get_ticks() - last_special_enemy_time >= special_enemy_interval:
-        enemy = EnemySpaceship(4)  # Düşmən gəmisinin sürəti
+        enemy = EnemySpaceship(4)  
         enemy_spaceships.append(enemy)
-        last_special_enemy_time = pygame.time.get_ticks()  # Sonuncu düşmən zamanını yenilə
+        last_special_enemy_time = pygame.time.get_ticks()  
 
 def add_power_up():
-    if random.randint(1, 1000) <= 5:  # Güc artırıcıların 1000-də bir ehtimalla ekrana düşməsi
-        power_type = random.choice(["life", "speed", "ammo"])  # Həyat, sürət və ya ammo
+    if random.randint(1, 1000) <= 5:  
+        power_type = random.choice(["life", "speed", "ammo"])  
         x = random.randint(20, SCREEN_WIDTH - 20)
         power_ups.append(PowerUp(x, -20, power_type))
 
@@ -172,6 +172,18 @@ while not level_selected:
                 meteor_speed = levels["Difficult"]
                 level_selected = True
 
+def restart_game():
+    global spaceship, meteors, strong_meteors, enemy_spaceships, bullets, power_ups, score, lives, meteor_speed
+    spaceship = Spaceship()
+    meteors.clear()
+    strong_meteors.clear()
+    enemy_spaceships.clear()
+    bullets.clear()
+    power_ups.clear()
+    score = 0
+    lives = 3
+    meteor_speed = 2
+
 running = True
 while running:
     screen.fill(BLACK)
@@ -182,9 +194,12 @@ while running:
             sys.exit()
 
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:  # Mərmi atmaq üçün Space düyməsi
+            if event.key == pygame.K_SPACE:  
                 bullet = Bullet(spaceship.rect.centerx, spaceship.rect.top)
                 bullets.append(bullet)
+
+            if event.key == pygame.K_r:  # Restart game when R is pressed
+                restart_game()
 
     keys = pygame.key.get_pressed()
     spaceship.move(keys)
@@ -229,13 +244,13 @@ while running:
         if power_up.rect.colliderect(spaceship.rect):
             power_ups.remove(power_up)
             if power_up.type == "life":
-                lives += 1  # Həyat artırılır
+                lives += 1
             elif power_up.type == "speed":
-                spaceship.speed += 1  # Gəminin sürəti artırılır
+                spaceship.speed += 1
             elif power_up.type == "ammo":
-                pass  # Əlavə mərmi ehtiyatı təmin edilə bilər
+                pass
 
-        if power_up.rect.top > SCREEN_HEIGHT:  # Ekranı tərk edən güc artırıcıları
+        if power_up.rect.top > SCREEN_HEIGHT:
             power_ups.remove(power_up)
 
     for bullet in bullets[:]:
@@ -244,22 +259,22 @@ while running:
             if bullet.rect.colliderect(meteor.rect):
                 meteors.remove(meteor)
                 bullets.remove(bullet)
-                score += 1  # Hər vurulan meteor üçün xal
+                score += 1
                 break
         for strong_meteor in strong_meteors[:]:
             if bullet.rect.colliderect(strong_meteor.rect):
                 strong_meteors.remove(strong_meteor)
                 bullets.remove(bullet)
-                score += 3  # Güclü meteorit vurduqda daha çox xal
+                score += 3
                 break
         for enemy_spaceship in enemy_spaceships[:]:
             if bullet.rect.colliderect(enemy_spaceship.rect):
                 enemy_spaceships.remove(enemy_spaceship)
                 bullets.remove(bullet)
-                score += 5  # Düşmən gəmisini vurduqda daha çox xal
+                score += 5
                 break
 
-        if bullet.rect.bottom < 0:  # Ekranı tərk edən mərmilər
+        if bullet.rect.bottom < 0:
             bullets.remove(bullet)
 
     spaceship.draw()
@@ -278,6 +293,25 @@ while running:
 
     draw_text(f"Skor: {score}", 10, 10)
     draw_text(f"Live: {lives}", 10, 50)
+
+    if lives == 0:
+        draw_text("Game Over!", SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 - 30)
+        draw_text(f"Final Skor: {score}", SCREEN_WIDTH // 2 - 120, SCREEN_HEIGHT // 2 + 10)
+        draw_text("Press 'R' to Restart", SCREEN_WIDTH // 2 - 140, SCREEN_HEIGHT // 2 + 50)
+        pygame.display.flip()
+
+        waiting_for_restart = True
+        while waiting_for_restart:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:  # Restart game when R is pressed
+                        restart_game()
+                        waiting_for_restart = False
+            clock.tick(FPS)
 
     pygame.display.flip()
     clock.tick(FPS)
